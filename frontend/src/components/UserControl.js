@@ -1,33 +1,60 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axiosInstance from "../axiosInstance";
 
 function UserControl() {
     const [users, setUsers] = useState([]);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
+    const [nextCursor, setNextCursor] = useState(null); // 다음 페이지를 요청할 커서 정보
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true); // 더 많은 데이터가 있는지 여부
+    const hasFetched = useRef(false); // fetchUserControl이 한 번만 호출되었는지 추적
 
-    // 제품 목록을 가져오는 함수
-    const fetchUserControl = async (page) => {
+    // 회원 목록을 가져오는 함수
+    const fetchUserControl = async (cursor = null) => {
         try {
-            const response = await axiosInstance.get(`/api/adm/members/all`, {
-                params: { page },
+            setIsLoading(true);
+            const params = {
+                limit: 10, // 요청할 데이터 수
+            };
+
+            if (cursor) {
+                params.lastCreatedAt = cursor.lastCreatedAt;
+                params.lastId = cursor.lastId;
+            }
+
+            const response = await axiosInstance.get(`/api/adm/members/all/cursor`, {
+                params: params,
             });
 
-            console.log('Requested Page:', page); // 요청한 페이지 로그
             console.log('API Response:', response.data); // 응답 로그
 
-            setUsers(response.data.content); // 실제 제품 목록
-            setTotalPages(response.data.totalPages); // 전체 페이지 수
+            const newUsers = response.data.members;
+            setUsers(prevUsers => [...prevUsers, ...newUsers]); // 기존 사용자 목록에 새 사용자 추가
+
+            if (response.data.nextCursor) {
+                setNextCursor(response.data.nextCursor); // 다음 페이지를 위한 커서 업데이트
+            } else {
+                setHasMore(false); // 더 이상 데이터가 없음을 표시
+            }
         } catch (error) {
             alert('사용자 목록을 불러오는 데 실패했습니다: ' + (error.response?.data?.message || '알 수 없는 오류'));
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        console.log(`Fetching userControl for page: ${currentPage}`); // 현재 페이지 로그
-        fetchUserControl(currentPage); // fetchProducts 함수 호출
-    }, [currentPage]); // currentPage가 바뀔 때마다 실행
+        if (!hasFetched.current) {
+            console.log(`Fetching userControl with cursor: ${JSON.stringify(nextCursor)}`);
+            fetchUserControl(); // 초기 데이터 로드 (커서 없음)
+            hasFetched.current = true; // 한 번 호출되었음을 표시
+        }
+    }, []); // 컴포넌트 마운트 시 한 번 실행
 
+    const handleNext = () => {
+        if (hasMore && !isLoading) {
+            fetchUserControl(nextCursor);
+        }
+    };
 
     return (
         <div>
@@ -55,19 +82,14 @@ function UserControl() {
                 </tbody>
             </table>
             <div style={{ marginTop: '16px' }}>
+
                 <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage <= 0}
+                    onClick={handleNext}
+                    disabled={!hasMore || isLoading}
                 >
-                    이전
+                    {isLoading ? '로딩 중...' : '다음'}
                 </button>
-                <span> 페이지 {currentPage + 1} / {totalPages} </span>
-                <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage >= totalPages - 1}
-                >
-                    다음
-                </button>
+
             </div>
         </div>
     );

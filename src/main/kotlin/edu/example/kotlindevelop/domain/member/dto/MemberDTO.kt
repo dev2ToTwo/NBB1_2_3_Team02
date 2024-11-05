@@ -2,6 +2,7 @@ package edu.example.kotlindevelop.domain.member.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import edu.example.kotlindevelop.domain.member.entity.Member
+import edu.example.kotlindevelop.domain.member.pagination.Cursor
 import jakarta.validation.constraints.NotBlank
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.core.user.OAuth2User
@@ -156,6 +157,22 @@ class MemberDTO {
          var loginId: String,
          var email: String
     )
+
+    data class MemberCursorRequest(
+        val lastCreatedAt: LocalDateTime?,
+        val lastId : Long?,
+        val limit: Int?
+
+    )
+
+    data class MemberCursorResponse(
+        val members : List<Response>,
+        val nextCursor : Cursor?
+
+    )
+
+
+
 }
 //    @Data
         //    @AllArgsConstructor

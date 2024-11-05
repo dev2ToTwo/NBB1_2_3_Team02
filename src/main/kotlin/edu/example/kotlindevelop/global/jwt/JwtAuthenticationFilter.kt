@@ -61,7 +61,7 @@ class JwtAuthenticationFilter (
 
                 val auth: Authentication = UsernamePasswordAuthenticationToken(user, user.password, user.authorities)
 
-                logger.error("JWT Filter 동작 ")
+
                 SecurityContextHolder.getContext().authentication = auth
             } catch (e: SignatureException) {
                 // 서명 오류가 발생한 경우 로그를 남기고 400 오류를 응답합니다.

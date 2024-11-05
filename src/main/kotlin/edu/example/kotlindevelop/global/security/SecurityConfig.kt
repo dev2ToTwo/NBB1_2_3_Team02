@@ -31,9 +31,9 @@ class SecurityConfig(
                         AntPathRequestMatcher("/resources/**"),
                         AntPathRequestMatcher("/h2-console/**")
                     ).permitAll()
-//                    .requestMatchers("/adm/**").hasRole("ADMIN")
-                    .requestMatchers("/").permitAll()
-                    .anyRequest().permitAll()
+                    //    .requestMatchers("/adm/**").hasRole("ADMIN")
+                    .requestMatchers("/**").permitAll()
+                    //.anyRequest().authenticated()
             }
             .headers { headers ->
                 headers
